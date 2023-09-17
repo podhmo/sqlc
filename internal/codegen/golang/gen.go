@@ -27,6 +27,8 @@ type tmplCtx struct {
 	// TODO: Race conditions
 	SourceName string
 
+	QueryName string
+
 	EmitJSONTags              bool
 	JsonTagsIDUppercase       bool
 	EmitDBTags                bool
@@ -38,6 +40,7 @@ type tmplCtx struct {
 	EmitAllEnumValues         bool
 	UsesCopyFrom              bool
 	UsesBatch                 bool
+	UsesSeparatedQueries      bool
 }
 
 func (t *tmplCtx) OutputQuery(sourceName string) bool {
@@ -137,6 +140,7 @@ func generate(req *plugin.CodeGenRequest, enums []Enum, structs []Struct, querie
 		EmitAllEnumValues:         golang.EmitAllEnumValues,
 		UsesCopyFrom:              usesCopyFrom(queries),
 		UsesBatch:                 usesBatch(queries),
+		UsesSeparatedQueries:      true, // TODO: set by config
 		SQLDriver:                 parseDriver(golang.SqlPackage),
 		Q:                         "`",
 		Package:                   golang.Package,
@@ -166,6 +170,7 @@ func generate(req *plugin.CodeGenRequest, enums []Enum, structs []Struct, querie
 		"escape":     sdk.EscapeBacktick,
 		"imports":    i.Imports,
 		"hasPrefix":  strings.HasPrefix,
+		"trimSuffix": strings.TrimSuffix,
 
 		// These methods are Go specific, they do not belong in the codegen package
 		// (as that is language independent)
@@ -194,6 +199,10 @@ func generate(req *plugin.CodeGenRequest, enums []Enum, structs []Struct, querie
 		var b bytes.Buffer
 		w := bufio.NewWriter(&b)
 		tctx.SourceName = name
+		tctx.QueryName = "Queries"
+		if tctx.UsesSeparatedQueries {
+			tctx.QueryName = sdk.Title(strings.TrimSuffix(name, ".sql")) + tctx.QueryName
+		}
 		tctx.GoQueries = replacedQueries
 		err := tmpl.ExecuteTemplate(w, templateName, &tctx)
 		w.Flush()

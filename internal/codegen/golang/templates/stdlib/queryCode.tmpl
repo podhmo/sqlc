@@ -1,4 +1,8 @@
-{{define "queryCodeStd"}}
+{{define "queryCodeStd"}}{{with $root := .}}
+{{ if (not (eq $root.QueryName "Queries"))}}
+type {{$root.QueryName}} struct { db DBTX } 
+func (q *Queries) {{(trimSuffix $root.QueryName "Queries")}}() *{{$root.QueryName}} { return &{{$root.QueryName}}{db: q.db} }
+{{end -}}
 {{range .GoQueries}}
 {{if $.OutputQuery .SourceName}}
 const {{.ConstantName}} = {{$.Q}}-- name: {{.MethodName}} {{.Cmd}}
@@ -22,7 +26,7 @@ type {{.Ret.Type}} struct { {{- range .Ret.Struct.Fields}}
 {{if eq .Cmd ":one"}}
 {{range .Comments}}//{{.}}
 {{end -}}
-func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) ({{.Ret.DefineType}}, error) {
+func (q *{{$root.QueryName}}) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) ({{.Ret.DefineType}}, error) {
     {{- template "queryCodeStdExec" . }}
 	{{- if or (ne .Arg.Pair .Ret.Pair) (ne .Arg.DefineType .Ret.DefineType) }}
 	var {{.Ret.Name}} {{.Ret.Type}}
@@ -35,7 +39,7 @@ func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}
 {{if eq .Cmd ":many"}}
 {{range .Comments}}//{{.}}
 {{end -}}
-func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) ([]{{.Ret.DefineType}}, error) {
+func (q *{{$root.QueryName}}) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) ([]{{.Ret.DefineType}}, error) {
     {{- template "queryCodeStdExec" . }}
     if err != nil {
         return nil, err
@@ -66,7 +70,7 @@ func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}
 {{if eq .Cmd ":exec"}}
 {{range .Comments}}//{{.}}
 {{end -}}
-func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) error {
+func (q *{{$root.QueryName}}) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) error {
     {{- template "queryCodeStdExec" . }}
     return err
 }
@@ -75,7 +79,7 @@ func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}
 {{if eq .Cmd ":execrows"}}
 {{range .Comments}}//{{.}}
 {{end -}}
-func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) (int64, error) {
+func (q *{{$root.QueryName}}) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) (int64, error) {
     {{- template "queryCodeStdExec" . }}
     if err != nil {
         return 0, err
@@ -87,7 +91,7 @@ func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}
 {{if eq .Cmd ":execlastid"}}
 {{range .Comments}}//{{.}}
 {{end -}}
-func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) (int64, error) {
+func (q *{{$root.QueryName}}) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) (int64, error) {
     {{- template "queryCodeStdExec" . }}
     if err != nil {
         return 0, err
@@ -99,16 +103,16 @@ func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}
 {{if eq .Cmd ":execresult"}}
 {{range .Comments}}//{{.}}
 {{end -}}
-func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) (sql.Result, error) {
+func (q *{{$root.QueryName}}) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}) (sql.Result, error) {
     {{- template "queryCodeStdExec" . }}
 }
 {{end}}
 
 {{end}}
 {{end}}
-{{end}}
+{{end}}{{end}}
 
-{{define "queryCodeStdExec"}}
+{{define "queryCodeStdExec"}}{{with $root := .}}
     {{- if .Arg.HasSqlcSlices }}
         query := {{.ConstantName}}
         var queryParams []interface{}
@@ -152,4 +156,4 @@ func (q *Queries) {{.MethodName}}(ctx context.Context, {{ dbarg }} {{.Arg.Pair}}
     {{- else}}
         {{- queryRetval . }} {{ queryMethod . }}(ctx, {{.ConstantName}}, {{.Arg.Params}})
     {{- end -}}
-{{end}}
+{{end}}{{end}}
