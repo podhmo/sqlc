@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+type QueryQueries struct{ db DBTX }
+
+func (q *Queries) Query() *QueryQueries { return &QueryQueries{db: q.db} }
+
 const booksByTags = `-- name: BooksByTags :many
 SELECT
   book_id,
@@ -31,7 +35,7 @@ type BooksByTagsRow struct {
 	Tags   string
 }
 
-func (q *Queries) BooksByTags(ctx context.Context, tags string) ([]BooksByTagsRow, error) {
+func (q *QueryQueries) BooksByTags(ctx context.Context, tags string) ([]BooksByTagsRow, error) {
 	rows, err := q.db.QueryContext(ctx, booksByTags, tags)
 	if err != nil {
 		return nil, err
@@ -70,7 +74,7 @@ type BooksByTitleYearParams struct {
 	Yr    int32
 }
 
-func (q *Queries) BooksByTitleYear(ctx context.Context, arg BooksByTitleYearParams) ([]Book, error) {
+func (q *QueryQueries) BooksByTitleYear(ctx context.Context, arg BooksByTitleYearParams) ([]Book, error) {
 	rows, err := q.db.QueryContext(ctx, booksByTitleYear, arg.Title, arg.Yr)
 	if err != nil {
 		return nil, err
@@ -106,7 +110,7 @@ const createAuthor = `-- name: CreateAuthor :execresult
 INSERT INTO authors (name) VALUES (?)
 `
 
-func (q *Queries) CreateAuthor(ctx context.Context, name string) (sql.Result, error) {
+func (q *QueryQueries) CreateAuthor(ctx context.Context, name string) (sql.Result, error) {
 	return q.db.ExecContext(ctx, createAuthor, name)
 }
 
@@ -140,7 +144,7 @@ type CreateBookParams struct {
 	Tags      string
 }
 
-func (q *Queries) CreateBook(ctx context.Context, arg CreateBookParams) (sql.Result, error) {
+func (q *QueryQueries) CreateBook(ctx context.Context, arg CreateBookParams) (sql.Result, error) {
 	return q.db.ExecContext(ctx, createBook,
 		arg.AuthorID,
 		arg.Isbn,
@@ -162,7 +166,7 @@ type DeleteAuthorBeforeYearParams struct {
 	AuthorID int32
 }
 
-func (q *Queries) DeleteAuthorBeforeYear(ctx context.Context, arg DeleteAuthorBeforeYearParams) error {
+func (q *QueryQueries) DeleteAuthorBeforeYear(ctx context.Context, arg DeleteAuthorBeforeYearParams) error {
 	_, err := q.db.ExecContext(ctx, deleteAuthorBeforeYear, arg.Yr, arg.AuthorID)
 	return err
 }
@@ -172,7 +176,7 @@ DELETE FROM books
 WHERE book_id = ?
 `
 
-func (q *Queries) DeleteBook(ctx context.Context, bookID int32) error {
+func (q *QueryQueries) DeleteBook(ctx context.Context, bookID int32) error {
 	_, err := q.db.ExecContext(ctx, deleteBook, bookID)
 	return err
 }
@@ -182,7 +186,7 @@ SELECT author_id, name FROM authors
 WHERE author_id = ?
 `
 
-func (q *Queries) GetAuthor(ctx context.Context, authorID int32) (Author, error) {
+func (q *QueryQueries) GetAuthor(ctx context.Context, authorID int32) (Author, error) {
 	row := q.db.QueryRowContext(ctx, getAuthor, authorID)
 	var i Author
 	err := row.Scan(&i.AuthorID, &i.Name)
@@ -194,7 +198,7 @@ SELECT book_id, author_id, isbn, book_type, title, yr, available, tags FROM book
 WHERE book_id = ?
 `
 
-func (q *Queries) GetBook(ctx context.Context, bookID int32) (Book, error) {
+func (q *QueryQueries) GetBook(ctx context.Context, bookID int32) (Book, error) {
 	row := q.db.QueryRowContext(ctx, getBook, bookID)
 	var i Book
 	err := row.Scan(
@@ -222,7 +226,7 @@ type UpdateBookParams struct {
 	BookID int32
 }
 
-func (q *Queries) UpdateBook(ctx context.Context, arg UpdateBookParams) error {
+func (q *QueryQueries) UpdateBook(ctx context.Context, arg UpdateBookParams) error {
 	_, err := q.db.ExecContext(ctx, updateBook, arg.Title, arg.Tags, arg.BookID)
 	return err
 }
@@ -240,7 +244,7 @@ type UpdateBookISBNParams struct {
 	BookID int32
 }
 
-func (q *Queries) UpdateBookISBN(ctx context.Context, arg UpdateBookISBNParams) error {
+func (q *QueryQueries) UpdateBookISBN(ctx context.Context, arg UpdateBookISBNParams) error {
 	_, err := q.db.ExecContext(ctx, updateBookISBN,
 		arg.Title,
 		arg.Tags,
