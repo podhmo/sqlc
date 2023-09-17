@@ -272,7 +272,9 @@ func generate(req *plugin.CodeGenRequest, enums []Enum, structs []Struct, querie
 	for _, gq := range queries {
 		files[gq.SourceName] = struct{}{}
 	}
-
+	if len(files) <= 1 {
+		tctx.UsesSeparatedQueries = false
+	}
 	for source := range files {
 		if err := execute(source, "queryFile"); err != nil {
 			return nil, err
