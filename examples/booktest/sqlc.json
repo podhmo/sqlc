@@ -5,7 +5,7 @@
       "name": "booktest",
       "path": "postgresql",
       "schema": "postgresql/schema.sql",
-      "queries": "postgresql/query.sql",
+      "queries": ["postgresql/book.sql", "postgresql/author.sql"],
       "engine": "postgresql",
       "database": {
         "uri": "postgresql://${PG_USER}:${PG_PASSWORD}@${PG_HOST}:${PG_PORT}/booktest"

@@ -1,7 +1,3 @@
--- name: GetAuthor :one
-SELECT * FROM authors
-WHERE author_id = $1;
-
 -- name: GetBook :one
 SELECT * FROM books
 WHERE book_id = $1;
@@ -24,10 +20,6 @@ SELECT
 FROM books
 LEFT JOIN authors ON books.author_id = authors.author_id
 WHERE tags && $1::varchar[];
-
--- name: CreateAuthor :one
-INSERT INTO authors (name) VALUES ($1)
-RETURNING *;
 
 -- name: CreateBook :one
 INSERT INTO books (
